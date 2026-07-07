@@ -89,6 +89,9 @@ PINKY = (
 FINGERS = THUMB, INDEX, MIDDLE, RING, PINKY
 DIGITS = INDEX, MIDDLE, RING, PINKY
 
+DIGIT_TIPS = INDEX_TIP, MIDDLE_TIP, RING_TIP, PINKY_TIP
+FINGER_TIPS = THUMB_TIP, INDEX_TIP, MIDDLE_TIP, RING_TIP, PINKY_TIP
+
 
 def finger_extension(hand: Tuple[Pose, ...], chain):
     """Measure how directly a finger spans from its base to its tip.
@@ -157,6 +160,32 @@ def palm_normal(hand: Tuple[Pose, ...]):
 
 # ----------------- pinch gestures -----------------
 
+def pinch_any(hand: Tuple[Pose, ...], digit_tip_index: int, threshold=0.015) -> Union[bool, float]:
+    """Detect a thumb-to-digit pinch.
+
+    Args:
+        hand: Tracked hand poses.
+        digit_tip_index: Joint index for a non-thumb fingertip, such as
+            :data:`INDEX_TIP`, :data:`MIDDLE_TIP`, :data:`RING_TIP`, or
+            :data:`PINKY_TIP`.
+        threshold: Maximum fingertip distance in metres, or ``None`` to return
+            the distance. The default is 0.015 metres (1.5 cm).
+
+    Returns:
+        Boolean classification, or fingertip distance in metres when
+        ``threshold`` is ``None``.
+
+    Raises:
+        IndexError: If ``digit_tip_index`` is not a non-thumb fingertip joint,
+            or if ``hand`` lacks a required joint.
+    """
+    if digit_tip_index not in DIGIT_TIPS:
+        raise IndexError(f"digit_tip_index must be one of {DIGIT_TIPS}")
+
+    dist = hand[THUMB_TIP].position.distance(hand[digit_tip_index].position)
+    return dist if threshold is None else dist < threshold
+
+
 def pinch(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
     """Detect a thumb-to-index-finger pinch.
 
@@ -169,8 +198,7 @@ def pinch(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
         Whether the fingertip distance is below ``threshold``, or the distance
         in metres when ``threshold`` is ``None``.
     """
-    dist = hand[THUMB_TIP].position.distance(hand[INDEX_TIP].position)
-    return dist if threshold is None else dist < threshold
+    return pinch_any(hand, INDEX_TIP, threshold)
 
 
 def pinch_middle(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
@@ -185,8 +213,7 @@ def pinch_middle(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
         Boolean classification, or fingertip distance in metres when
         ``threshold`` is ``None``.
     """
-    dist = hand[THUMB_TIP].position.distance(hand[MIDDLE_TIP].position)
-    return dist if threshold is None else dist < threshold
+    return pinch_any(hand, MIDDLE_TIP, threshold)
 
 
 def pinch_ring(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
@@ -201,8 +228,7 @@ def pinch_ring(hand: Tuple[Pose, ...], threshold=0.015) -> Union[bool, float]:
         Boolean classification, or fingertip distance in metres when
         ``threshold`` is ``None``.
     """
-    dist = hand[THUMB_TIP].position.distance(hand[RING_TIP].position)
-    return dist if threshold is None else dist < threshold
+    return pinch_any(hand, RING_TIP, threshold)
 
 
 def double_pinch(hands: Hands, threshold=None) -> Union[None, float]:
