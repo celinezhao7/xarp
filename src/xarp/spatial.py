@@ -43,6 +43,16 @@ class Vector3(RootModel[list[float]]):
     def model_post_init(self, __context: Any) -> None:
         object.__setattr__(self, "_arr", np.array(self.root, dtype=np.float64))
 
+    def __copy__(self) -> Self:
+        copied = super().__copy__()
+        object.__setattr__(copied, "_arr", self._arr)
+        return copied
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
+        copied = super().__deepcopy__(memo)
+        object.__setattr__(copied, "_arr", self._arr.copy())
+        return copied
+
     # ------------------------------------------------------------------
     # Named component accessors
     # ------------------------------------------------------------------
@@ -331,6 +341,16 @@ class Vector4(RootModel[list[float]]):
     def model_post_init(self, __context: Any) -> None:
         object.__setattr__(self, "_arr", np.array(self.root, dtype=np.float64))
 
+    def __copy__(self) -> Self:
+        copied = super().__copy__()
+        object.__setattr__(copied, "_arr", self._arr)
+        return copied
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
+        copied = super().__deepcopy__(memo)
+        object.__setattr__(copied, "_arr", self._arr.copy())
+        return copied
+
     # ------------------------------------------------------------------
     # Named component accessors
     # ------------------------------------------------------------------
@@ -532,6 +552,16 @@ class Quaternion(RootModel[list[float]]):
 
     def model_post_init(self, __context: Any) -> None:
         object.__setattr__(self, "_arr", np.array(self.root, dtype=np.float64))
+
+    def __copy__(self) -> Self:
+        copied = super().__copy__()
+        object.__setattr__(copied, "_arr", self._arr)
+        return copied
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Self:
+        copied = super().__deepcopy__(memo)
+        object.__setattr__(copied, "_arr", self._arr.copy())
+        return copied
 
     # ------------------------------------------------------------------
     # Named component accessors
