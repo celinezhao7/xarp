@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 from pydantic import ValidationError
 
+from xarp.colors import RED
 from xarp.entities import (
     Asset,
     DefaultAssets,
@@ -15,7 +16,7 @@ from xarp.entities import (
     MIMEType,
     TextAsset,
 )
-from xarp.spatial import Transform
+from xarp.spatial import Transform, Vector4
 
 
 # ---------------------------------------------------------------------------
@@ -42,6 +43,9 @@ def fetch(url: str) -> bytes:
 
 class TestMIMEType(unittest.TestCase):
 
+    def test_constants_are_strings(self):
+        self.assertIsInstance(MIMEType.PNG, str)
+
     def test_from_extension_with_dot(self):
         self.assertEqual(MIMEType.from_extension(".png"), MIMEType.PNG)
 
@@ -67,6 +71,14 @@ class TestAsset(unittest.TestCase):
     def test_construction_with_raw(self):
         a = Asset(asset_key="k", mime_type=MIMEType.TXT, raw=b"hello")
         self.assertEqual(a.raw, b"hello")
+
+    def test_plain_string_mime_accepted(self):
+        a = Asset(asset_key="k", mime_type="text/plain", raw=b"hello")
+        self.assertEqual(a.mime_type, "text/plain")
+
+    def test_arbitrary_mime_string_accepted(self):
+        a = Asset(asset_key="k", mime_type="application/x-custom", raw=b"hello")
+        self.assertEqual(a.mime_type, "application/x-custom")
 
     def test_obj_returns_raw_by_default(self):
         a = Asset(raw=b"hello")
@@ -188,7 +200,7 @@ class TestImageAsset(unittest.TestCase):
         img = Image.new("RGB", (2, 2))
         buf = BytesIO()
         img.save(buf, format="JPEG")
-        a = ImageAsset(mime_type=MIMEType.JPEG, raw=buf.getvalue())
+        a = ImageAsset(mime_type="image/jpeg", raw=buf.getvalue())
         self.assertEqual(a.mime_type, MIMEType.JPEG)
 
     def test_wrong_mime_rejected(self):
@@ -336,7 +348,19 @@ class TestElement(unittest.TestCase):
 
     def test_color_rgba_accepted(self):
         e = Element(color=(1.0, 0.5, 0.0, 1.0))
-        self.assertEqual(e.color, (1.0, 0.5, 0.0, 1.0))
+        self.assertEqual(e.color, Vector4(1.0, 0.5, 0.0, 1.0))
+
+    def test_color_constant_accepted(self):
+        e = Element(color=RED)
+        self.assertEqual(e.color, RED)
+        self.assertEqual(e.model_dump()["color"], [1.0, 0.0, 0.0, 1.0])
+
+    def test_color_out_of_range_rejected(self):
+        with self.assertRaises(ValidationError):
+            Element(color=(255.0, 0.0, 0.0, 1.0))
+
+        with self.assertRaises(ValidationError):
+            Element(color=(-0.1, 0.0, 0.0, 1.0))
 
     def test_transform_is_independent_per_instance(self):
         e1 = Element()
